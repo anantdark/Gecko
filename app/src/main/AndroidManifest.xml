@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:name=".GeckoApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher_green"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher_green"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Gecko">
+
+        <!-- Always startable for IDE / adb. Home-screen icons use the aliases below. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+
+        <activity-alias
+            android:name=".icon.AliasGreen"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_green"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_green"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.AliasMint"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_mint"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_mint"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.AliasSage"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sage"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_sage"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.AliasOlive"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_olive"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_olive"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.AliasForest"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_forest"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_forest"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.AliasSeafoam"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_seafoam"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_seafoam"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".service.GeckoRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="false" />
+
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

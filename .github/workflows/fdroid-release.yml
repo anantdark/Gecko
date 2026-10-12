@@ -1,0 +1,119 @@
+# Publish a tagged FOSS APK for F-Droid reproducible builds.
+name: F-Droid Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub Release for this build
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: fdroid-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Compute version
+        id: resolve
+        run: |
+          CURRENT_CODE=$(awk '/create\("fdroid"\)/,/^        \}/' app/build.gradle.kts | grep -o 'versionCode = [0-9]*' | grep -o '[0-9]*')
+          if [ -z "$CURRENT_CODE" ]; then
+            echo "::error::Could not read fdroid versionCode from app/build.gradle.kts"
+            exit 1
+          fi
+          VERSION_CODE=$(( CURRENT_CODE + 1 ))
+          MAJOR=1
+          BASE_MINOR=0
+          MINOR=$(( BASE_MINOR + VERSION_CODE / 100 ))
+          PATCH=$(( VERSION_CODE % 100 ))
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="v${VERSION}-fdroid"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in build.gradle.kts
+        run: |
+          VERSION="${{ steps.resolve.outputs.version }}"
+          VERSION_CODE="${{ steps.resolve.outputs.version_code }}"
+          sed -i "/create(\"fdroid\")/,/^        }/ s/versionCode = [0-9]*/versionCode = ${VERSION_CODE}/" app/build.gradle.kts
+          sed -i "/create(\"fdroid\")/,/^        }/ s/versionName = \"[^\"]*\"/versionName = \"${VERSION}\"/" app/build.gradle.kts
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools platforms;android-36.1"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Create local.properties
+        run: echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+      - name: Configure release signing
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ] || [ -z "$RELEASE_STORE_PASSWORD" ] \
+            || [ -z "$RELEASE_KEY_ALIAS" ] || [ -z "$RELEASE_KEY_PASSWORD" ]; then
+            echo "::error::Missing RELEASE_* secrets. See DISTRIBUTION.md."
+            exit 1
+          fi
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > freescale-release.jks
+          printf '%s\n' \
+            "storeFile=freescale-release.jks" \
+            "storePassword=${RELEASE_STORE_PASSWORD}" \
+            "keyAlias=${RELEASE_KEY_ALIAS}" \
+            "keyPassword=${RELEASE_KEY_PASSWORD}" \
+            > keystore.properties
+
+      - name: Build F-Droid release APK
+        run: ./gradlew :app:assembleFdroidRelease --no-daemon
+
+      - name: Commit version bump
+        if: ${{ inputs.publish }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts
+          git commit -m "chore(fdroid): bump to ${{ steps.resolve.outputs.version }} (${{ steps.resolve.outputs.version_code }})" || true
+          git push origin HEAD:main
+
+      - name: Create F-Droid GitHub Release
+        if: ${{ inputs.publish }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.resolve.outputs.tag }}
+          name: Gecko ${{ steps.resolve.outputs.version }} (F-Droid)
+          body: F-Droid channel build ${{ steps.resolve.outputs.version }} (versionCode ${{ steps.resolve.outputs.version_code }}).
+          draft: false
+          prerelease: true
+          make_latest: false
+          files: |
+            app/build/outputs/apk/fdroid/release/Gecko-${{ steps.resolve.outputs.version }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

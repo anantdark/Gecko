@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified left-facing chameleon silhouette for themed / monochrome icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M78,62c-2,-14 -12,-26 -28,-30 -8,-2 -18,0 -26,8 -4,4 -7,10 -7,16 0,8 4,14 12,18 6,3 12,2 18,0 4,-1 8,-1 12,2 6,4 12,8 16,6 3,-1 4,-6 3,-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M86,70c-2,8 -8,14 -16,16 -2,0 -3,-2 -2,-3 4,-3 8,-7 10,-12 1,-2 3,-2 4,-1 2,1 4,0 4,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,44a5,5 0 1,1 0.01,0z" />
+</vector>

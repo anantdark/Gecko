@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration (SDK path, signing)
+local.properties
+keystore.properties
+*.jks
+*.keystore
+RELEASE_KEYSTORE_BASE64.txt
+SECRETS.txt
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+.kotlin/
+
+# Captures / NDK
+/captures
+.externalNativeBuild
+.cxx
+
+# OS / misc
+.DS_Store
+*.apk
+*.ap_
+*.aab
+
+# Cursor
+.cursor/

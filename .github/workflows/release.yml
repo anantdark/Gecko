@@ -1,0 +1,138 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools platforms;android-36.1"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Create local.properties
+        run: echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+      - name: Configure release signing
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ] || [ -z "$RELEASE_STORE_PASSWORD" ] \
+            || [ -z "$RELEASE_KEY_ALIAS" ] || [ -z "$RELEASE_KEY_PASSWORD" ]; then
+            echo "::error::Missing RELEASE_* secrets. See DISTRIBUTION.md."
+            exit 1
+          fi
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > freescale-release.jks
+          printf '%s\n' \
+            "storeFile=freescale-release.jks" \
+            "storePassword=${RELEASE_STORE_PASSWORD}" \
+            "keyAlias=${RELEASE_KEY_ALIAS}" \
+            "keyPassword=${RELEASE_KEY_PASSWORD}" \
+            > keystore.properties
+          echo "Release signing configured."
+
+      - name: Compute version metadata
+        id: version
+        run: |
+          MAJOR=1
+          BASE_MINOR=0
+          MINOR=$(( BASE_MINOR + GITHUB_RUN_NUMBER / 100 ))
+          PATCH=$(( GITHUB_RUN_NUMBER % 100 ))
+          VERSION_CODE="${GITHUB_RUN_NUMBER}"
+          VERSION_NAME="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="v${VERSION_NAME}-build${GITHUB_RUN_NUMBER}"
+          echo "build_number=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK / AAB
+        run: >
+          ./gradlew :app:assembleGithubRelease :app:bundleGithubRelease --no-daemon
+          -PappVersionCode=${{ steps.version.outputs.version_code }}
+          -PappVersionName=${{ steps.version.outputs.version_name }}
+
+      - name: Publish stable latest APK alias
+        run: |
+          VERSIONED="app/build/outputs/apk/github/release/Gecko-${{ steps.version.outputs.version_name }}.apk"
+          cp "$VERSIONED" app/build/outputs/apk/github/release/Gecko-latest.apk
+
+      - name: Prepare release notes
+        id: notes
+        run: |
+          PREV_TAG=$(git tag --list 'v*-build*' --sort=-creatordate | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..HEAD"
+          else
+            RANGE="HEAD~15..HEAD"
+          fi
+          NOTES=$(
+            git log "$RANGE" --pretty=format:'- %s (%h)' --no-merges \
+              | grep -Eiv '^- (chore|ci|build|refactor|style|test)(\(|:| )' \
+              | head -20 \
+              || true
+          )
+          if [ -z "$NOTES" ]; then
+            NOTES="- Bug fixes and improvements"
+          fi
+          {
+            echo "notes<<EOF"
+            echo "## Gecko ${VERSION_NAME} (build ${BUILD_NUMBER})"
+            echo
+            echo "**Version code:** ${VERSION_CODE}"
+            echo "**Commit:** [\`${GITHUB_SHA::7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})"
+            echo
+            echo "### What's new"
+            echo "$NOTES"
+            echo
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Gecko ${{ steps.version.outputs.version_name }} (build ${{ steps.version.outputs.build_number }})
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          generate_release_notes: false
+          files: |
+            app/build/outputs/apk/github/release/Gecko-${{ steps.version.outputs.version_name }}.apk
+            app/build/outputs/apk/github/release/Gecko-latest.apk
+            app/build/outputs/bundle/githubRelease/app-github-release.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

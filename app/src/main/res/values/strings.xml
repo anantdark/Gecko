@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gecko</string>
+    <string name="notif_listening">Gecko is listening</string>
+    <string name="notif_recording">Gecko is recording</string>
+    <string name="notif_body">Rolling audio memory is active</string>
+    <string name="channel_listening">Listening</string>
+    <string name="channel_saved">Saved recordings</string>
+    <string name="recording_saved">Recording saved</string>
+    <string name="error_save">Couldn\'t save: %1$s</string>
+    <string name="error_mic">Couldn\'t open the microphone</string>
+    <string name="share">Share recording</string>
+</resources>
