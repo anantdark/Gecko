@@ -1,0 +1,4 @@
+• Initial F-Droid release
+• Rolling in-memory audio buffer with save-history chips
+• UI packs: Biolume, Sonar, Oxide, Volt
+• WAV export to Music/Gecko
