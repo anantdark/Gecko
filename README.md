@@ -6,13 +6,11 @@ Gecko keeps a rolling in-memory buffer of microphone audio so you can save somet
 
 ## Screenshots
 
-<p>
-  <img src="docs/screenshots/01-home-biolume.jpg" alt="Home — Biolume pack, listening" width="48%" />
-  <img src="docs/screenshots/03-home-sonar.jpg" alt="Home — Sonar pack, listening" width="48%" />
-</p>
-<p>
-  <img src="docs/screenshots/04-home-volt.jpg" alt="Home — Volt pack, listening" width="48%" />
-  <img src="docs/screenshots/02-settings.jpg" alt="Settings — UI packs and memory" width="48%" />
+<p align="center">
+  <img src="docs/screenshots/01-home-biolume.jpg" alt="Home — Biolume pack, listening" width="22%" />
+  <img src="docs/screenshots/03-home-sonar.jpg" alt="Home — Sonar pack, listening" width="22%" />
+  <img src="docs/screenshots/04-home-volt.jpg" alt="Home — Volt pack, listening" width="22%" />
+  <img src="docs/screenshots/02-settings.jpg" alt="Settings — UI packs and memory" width="22%" />
 </p>
 
 ## Features
