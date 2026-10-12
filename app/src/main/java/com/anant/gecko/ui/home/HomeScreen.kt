@@ -15,15 +15,25 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.anant.gecko.R
 import com.anant.gecko.service.GeckoRecordingService
+import com.anant.gecko.ui.donate.DonationDialog
+import com.anant.gecko.ui.donate.donationHeartColor
+import com.anant.gecko.ui.donate.initialDonationHeartColorIndex
+import com.anant.gecko.ui.donate.nextDonationHeartColorIndex
 import com.anant.gecko.ui.pack.GeckoBusyOverlay
 import com.anant.gecko.ui.pack.GeckoButton
 import com.anant.gecko.ui.pack.GeckoButtonTone
@@ -54,6 +64,28 @@ fun HomeScreen(
     val c = pack.colors
     var pendingSeconds by remember { mutableStateOf<Float?>(null) }
     var nameDraft by remember { mutableStateOf("") }
+    var showDonationDialog by rememberSaveable { mutableStateOf(false) }
+    var donationColorIndex by rememberSaveable {
+        mutableIntStateOf(initialDonationHeartColorIndex())
+    }
+    val donationColor = donationHeartColor(donationColorIndex)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var awaitingInitialDonationStart by remember(lifecycleOwner) {
+        mutableStateOf(!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                if (awaitingInitialDonationStart) {
+                    awaitingInitialDonationStart = false
+                } else {
+                    donationColorIndex = nextDonationHeartColorIndex(donationColorIndex)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val listening = state.listeningEnabled && state.mode != GeckoRecordingService.Mode.Idle
     val recording = state.mode == GeckoRecordingService.Mode.Recording
@@ -72,12 +104,20 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GeckoText("Gecko", pack.type.brand, c.ink)
-            GeckoIconButton(
-                resId = R.drawable.ic_ph_gear,
-                contentDescription = "Settings",
-                onClick = onOpenSettings,
-                tint = c.inkMuted,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                GeckoIconButton(
+                    resId = R.drawable.ic_ph_heart,
+                    contentDescription = "Support Gecko",
+                    onClick = { showDonationDialog = true },
+                    tint = donationColor,
+                )
+                GeckoIconButton(
+                    resId = R.drawable.ic_ph_gear,
+                    contentDescription = "Settings",
+                    onClick = onOpenSettings,
+                    tint = c.inkMuted,
+                )
+            }
         }
 
         GeckoText(
@@ -176,6 +216,10 @@ fun HomeScreen(
 
     if (state.busy) {
         GeckoBusyOverlay("Writing WAV to Music/Gecko…")
+    }
+
+    if (showDonationDialog) {
+        DonationDialog(onDismiss = { showDonationDialog = false })
     }
 
     pendingSeconds?.let { seconds ->

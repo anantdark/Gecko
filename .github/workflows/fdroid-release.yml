@@ -1,4 +1,5 @@
-# Publish a tagged FOSS APK for F-Droid reproducible builds.
+# Publish a tagged FOSS APK for F-Droid reproducible builds (Binaries / AllowedAPKSigningKeys).
+# Commit + tag MUST happen before the build so META-INF/version-control-info matches the tag SHA.
 name: F-Droid Release
 
 on:
@@ -46,6 +47,7 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Releasing F-Droid ${VERSION} (code ${VERSION_CODE}, tag ${TAG})"
 
       - name: Bump version in build.gradle.kts
         run: |
@@ -53,6 +55,40 @@ jobs:
           VERSION_CODE="${{ steps.resolve.outputs.version_code }}"
           sed -i "/create(\"fdroid\")/,/^        }/ s/versionCode = [0-9]*/versionCode = ${VERSION_CODE}/" app/build.gradle.kts
           sed -i "/create(\"fdroid\")/,/^        }/ s/versionName = \"[^\"]*\"/versionName = \"${VERSION}\"/" app/build.gradle.kts
+
+      - name: Generate changelog
+        run: |
+          VERSION_CODE="${{ steps.resolve.outputs.version_code }}"
+          CHANGELOG_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
+          mkdir -p "$(dirname "$CHANGELOG_FILE")"
+          PREV_TAG=$(git tag --list 'v*-fdroid' --sort=-version:refname | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..HEAD"
+          else
+            RANGE="HEAD~20..HEAD"
+          fi
+          git log "$RANGE" --pretty=format:'%s' --no-merges \
+            | grep -iv '^chore\|^ci\|^merge\|^build\|^refactor\|^style\|^test' \
+            | sed 's/^/• /' \
+            | head -15 \
+            > "$CHANGELOG_FILE"
+          if [ ! -s "$CHANGELOG_FILE" ]; then
+            echo "• Bug fixes and improvements" > "$CHANGELOG_FILE"
+          fi
+          truncate -s '<500' "$CHANGELOG_FILE" 2>/dev/null || true
+          cat "$CHANGELOG_FILE"
+
+      - name: Commit and tag
+        if: ${{ inputs.publish }}
+        run: |
+          VERSION="${{ steps.resolve.outputs.version }}"
+          TAG="${{ steps.resolve.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts fastlane/metadata/android/en-US/changelogs/
+          git commit -m "chore(fdroid): bump to ${VERSION} (${{ steps.resolve.outputs.version_code }}) [skip ci]"
+          git tag -a "${TAG}" -m "F-Droid ${VERSION}"
+          git push origin HEAD:main --follow-tags
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5.7.0
@@ -69,7 +105,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Create local.properties
-        run: echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+        run: echo "sdk.dir=${ANDROID_HOME}" > local.properties
 
       - name: Configure release signing
         env:
@@ -94,22 +130,18 @@ jobs:
       - name: Build F-Droid release APK
         run: ./gradlew :app:assembleFdroidRelease --no-daemon
 
-      - name: Commit version bump
-        if: ${{ inputs.publish }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/build.gradle.kts
-          git commit -m "chore(fdroid): bump to ${{ steps.resolve.outputs.version }} (${{ steps.resolve.outputs.version_code }})" || true
-          git push origin HEAD:main
-
       - name: Create F-Droid GitHub Release
         if: ${{ inputs.publish }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.resolve.outputs.tag }}
           name: Gecko ${{ steps.resolve.outputs.version }} (F-Droid)
-          body: F-Droid channel build ${{ steps.resolve.outputs.version }} (versionCode ${{ steps.resolve.outputs.version_code }}).
+          body: |
+            FOSS build for F-Droid reproducible builds.
+
+            - **versionName:** ${{ steps.resolve.outputs.version }}
+            - **versionCode:** ${{ steps.resolve.outputs.version_code }}
+            - **tag:** `${{ steps.resolve.outputs.tag }}`
           draft: false
           prerelease: true
           make_latest: false
