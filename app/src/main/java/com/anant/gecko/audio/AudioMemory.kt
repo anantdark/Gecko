@@ -164,7 +164,7 @@ class AudioMemory {
     }
 
     companion object {
-        /** ~5s of 48 kHz mono 16-bit — smaller than Echo's 20s chunks for snappier saves. */
+        /** ~5s of 48 kHz mono 16-bit — sized for snappier saves. */
         const val CHUNK_SIZE: Int = 480_000
     }
 }

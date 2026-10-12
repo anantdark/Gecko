@@ -83,7 +83,7 @@ class GeckoPreferences(private val context: Context) {
 
     companion object {
         /**
-         * 8 kHz — enough for speech (Echo's own guidance), ~⅙ the PCM of 48 kHz.
+         * 8 kHz — enough for speech, ~⅙ the PCM of 48 kHz.
          * Raise to 16 / 44.1 in Settings if you need more fidelity.
          */
         const val DEFAULT_SAMPLE_RATE = 8_000

@@ -10,7 +10,7 @@
 - Figtree — OFL (Erik Kennedy / The Figtree Project Authors)
 - IBM Plex Mono — OFL (IBM Corp.)
 
-## Design inspiration
+## Inspiration
 - Token/theme layering inspired by [Compose Unstyled](https://github.com/composablehorizons/compose-unstyled)
 - Soft surface treatment ideas from neumorphic Compose kits (e.g. BoltUIX/NeumorphicCompose)
-- Original Echo app: https://github.com/mafik/echo
+- Concept inspiration: [Echo](https://github.com/mafik/echo)

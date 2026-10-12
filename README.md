@@ -1,8 +1,12 @@
 # Gecko
 
-A modern Kotlin rewrite of [Echo](https://github.com/mafik/echo) — a time-travelling audio recorder for Android.
+Time-travelling audio recorder for Android. Gecko keeps a rolling in-memory buffer of microphone audio so you can save something that *just* happened, then optionally keep recording forward.
 
-Gecko keeps a rolling in-memory buffer of microphone audio so you can save something that *just* happened, then optionally keep recording forward.
+Inspired by [Echo](https://github.com/mafik/echo).
+
+[![CI](https://github.com/anantdark/Gecko/actions/workflows/ci.yml/badge.svg)](https://github.com/anantdark/Gecko/actions/workflows/ci.yml)
+[![Release](https://github.com/anantdark/Gecko/actions/workflows/release.yml/badge.svg)](https://github.com/anantdark/Gecko/actions/workflows/release.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 ## Screenshots
 
@@ -22,21 +26,13 @@ Gecko keeps a rolling in-memory buffer of microphone audio so you can save somet
 - Exports WAV files to `Music/Gecko` via MediaStore
 - Restarts listening after reboot if it was left on
 
-## Battery vs Echo (estimate)
+## Battery notes
 
-Always-on listening is dominated by the mic + PCM copy path. Numbers below are **engineering estimates** (not lab measurements).
+Always-on listening is dominated by the mic + PCM copy path. Defaults favor battery without giving up durability:
 
-| Scenario | Est. savings vs Echo | Notes |
-| --- | --- | --- |
-| Defaults (Gecko **8 kHz** vs Echo native ~44.1–48 kHz) | **~55–70%** less drain | ~⅙ the PCM rate; biggest lever |
-| Gecko 16 kHz vs Echo 48 kHz | **~40–60%** | Still well ahead |
-| Same sample rate on both | **~20–30%** | Power-saving AudioRecord, 80 ms blocking slices, no UI work in background, no AlarmManager |
-
-Extra levers in Gecko:
-
-| Choice | Why it helps (durability kept) |
+| Choice | Why it helps |
 | --- | --- |
-| Default **8 kHz** | Speech-clear (Echo's own guidance); raise in Settings if needed |
+| Default **8 kHz** | Speech-clear; ~⅙ the PCM of 48 kHz — raise in Settings if needed |
 | `PERFORMANCE_MODE_POWER_SAVING` | Platform favors battery over latency for the mic path |
 | Blocking reads in **80 ms** slices | Fewer sched wakeups; save still **drains** the HW buffer first |
 | **No StateFlow publishes** while UI unbound | Capture runs quiet in the background |
@@ -44,11 +40,11 @@ Extra levers in Gecko:
 | Silent `IMPORTANCE_LOW` notification | No sound/vibration while listening |
 | No AlarmManager on swipe | FGS + `stopWithTask=false` + sticky restart instead |
 
-Background reliability unchanged: mic FGS, `START_STICKY`, boot receiver, swipe restart, pause-and-drain before every export.
+Background reliability: mic FGS, `START_STICKY`, boot receiver, swipe restart, pause-and-drain before every export.
 
 ## Build
 
-Distribution flavors (same pattern as FitBuddy): `github` (default releases) and `fdroid`.
+Distribution flavors: `github` (default releases) and `fdroid`.
 
 ```bash
 ./gradlew :app:assembleGithubDebug
@@ -78,4 +74,4 @@ Icons: [Phosphor](https://phosphoricons.com) (MIT). Fonts: Syne, Figtree, IBM Pl
 
 ## License
 
-Inspired by Echo (free/libre). This rewrite is provided as-is for the Gecko project.
+[GPL-3.0](LICENSE)
