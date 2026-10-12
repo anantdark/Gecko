@@ -4,6 +4,17 @@ A modern Kotlin rewrite of [Echo](https://github.com/mafik/echo) — a time-trav
 
 Gecko keeps a rolling in-memory buffer of microphone audio so you can save something that *just* happened, then optionally keep recording forward.
 
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/01-home-biolume.jpg" alt="Home — Biolume pack, listening" width="48%" />
+  <img src="docs/screenshots/03-home-sonar.jpg" alt="Home — Sonar pack, listening" width="48%" />
+</p>
+<p>
+  <img src="docs/screenshots/04-home-volt.jpg" alt="Home — Volt pack, listening" width="48%" />
+  <img src="docs/screenshots/02-settings.jpg" alt="Settings — UI packs and memory" width="48%" />
+</p>
+
 ## Features
 
 - Continuous listening into a ring buffer (foreground mic service)
