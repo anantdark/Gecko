@@ -56,7 +56,8 @@ class GeckoPreferences(private val context: Context) {
     }
 
     suspend fun setMemoryBytes(bytes: Long) {
-        context.dataStore.edit { it[KEY_MEMORY_BYTES] = bytes }
+        // Store the user's pick as-is; heap cap is applied only when allocating the buffer.
+        context.dataStore.edit { it[KEY_MEMORY_BYTES] = bytes.coerceAtLeast(1L) }
     }
 
     suspend fun setSampleRate(rate: Int) {
@@ -79,16 +80,22 @@ class GeckoPreferences(private val context: Context) {
         context.dataStore.edit { it[KEY_ICON_MORPH_DAY] = day }
     }
 
-    fun defaultMemoryBytes(): Long = Runtime.getRuntime().maxMemory() / 4
+    fun defaultMemoryBytes(): Long = DEFAULT_MEMORY_BYTES
 
     companion object {
-        /**
-         * 8 kHz — enough for speech, ~⅙ the PCM of 48 kHz.
-         * Raise to 16 / 44.1 in Settings if you need more fidelity.
-         */
-        const val DEFAULT_SAMPLE_RATE = 8_000
+        /** 16 kHz — clear speech with a modest PCM cost over 8 kHz. */
+        const val DEFAULT_SAMPLE_RATE = 16_000
+
+        /** 256 MB rolling buffer (capped to 90% of the app heap on small devices). */
+        const val DEFAULT_MEMORY_BYTES = 256L * 1024 * 1024
 
         val QUALITY_OPTIONS = listOf(8_000, 16_000, 44_100)
+
+        val MEMORY_OPTIONS = listOf(
+            128L * 1024 * 1024,
+            256L * 1024 * 1024,
+            512L * 1024 * 1024,
+        )
 
         private val KEY_LISTENING = booleanPreferencesKey("listening_enabled")
         private val KEY_MEMORY_BYTES = longPreferencesKey("memory_bytes")
@@ -97,6 +104,11 @@ class GeckoPreferences(private val context: Context) {
         private val KEY_ICON_MORPH = stringPreferencesKey("icon_morph")
         private val KEY_ICON_MORPH_SCHEDULE = stringPreferencesKey("icon_morph_schedule")
         private val KEY_ICON_MORPH_DAY = intPreferencesKey("icon_morph_day")
+
+        fun memoryHeapCap(): Long = (Runtime.getRuntime().maxMemory() * 0.90).toLong()
+
+        /** Clamp for AudioMemory allocation only — preferences keep the user's chosen size. */
+        fun cappedMemory(bytes: Long): Long = bytes.coerceAtMost(memoryHeapCap()).coerceAtLeast(1L)
 
         fun nativeSampleRate(): Int =
             AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC)

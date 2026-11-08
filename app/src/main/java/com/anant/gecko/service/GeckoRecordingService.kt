@@ -55,7 +55,7 @@ import kotlin.math.min
  * Battery path:
  * - Blocking [AudioRecord.read] in ~80 ms slices (HAL sleep, no timer wakeups)
  * - [AudioRecord.PERFORMANCE_MODE_POWER_SAVING] when the device supports it
- * - Default 8 kHz speech rate
+ * - Default 16 kHz speech rate
  * - No UI state publishes while the app is backgrounded
  */
 class GeckoRecordingService : Service() {
@@ -235,7 +235,8 @@ class GeckoRecordingService : Service() {
             prefs.setMemoryBytes(bytes)
             configuredMemoryBytes = bytes
             if (listeningPref && mode != Mode.Idle) {
-                runOnCaptureControl { audioMemory.allocate(bytes) }
+                val alloc = GeckoPreferences.cappedMemory(bytes)
+                runOnCaptureControl { audioMemory.allocate(alloc) }
             }
             publishState()
         }
@@ -403,7 +404,7 @@ class GeckoRecordingService : Service() {
             return
         }
         audioRecord = record
-        audioMemory.allocate(memoryBytes)
+        audioMemory.allocate(GeckoPreferences.cappedMemory(memoryBytes))
         record.startRecording()
         captureActive.set(true)
 
@@ -511,7 +512,7 @@ class GeckoRecordingService : Service() {
             method.invoke(builder, mode)
             Log.d(TAG, "AudioRecord PERFORMANCE_MODE_POWER_SAVING enabled")
         } catch (_: Exception) {
-            // Stub/device without the API — larger buffer + 8 kHz still help
+            // Stub/device without the API — larger buffer + 16 kHz still help
         }
     }
 
@@ -659,11 +660,13 @@ class GeckoRecordingService : Service() {
             sampleRate = sampleRate,
             memoryBytes = audioMemory.allocatedMemorySize.takeIf { it > 0 } ?: configuredMemoryBytes,
         )
-        // Avoid recomposition churn when meters barely move
+        // Avoid recomposition churn when meters barely move — but never drop
+        // discrete settings changes (memory / sample rate) while listening is off.
         val prev = _uiState.value
         if (prev.listeningEnabled == next.listeningEnabled &&
             prev.mode == next.mode &&
             prev.sampleRate == next.sampleRate &&
+            prev.memoryBytes == next.memoryBytes &&
             prev.busy == next.busy &&
             prev.lastSavedFile == next.lastSavedFile &&
             kotlin.math.abs(prev.memorizedSeconds - next.memorizedSeconds) < 0.25f &&

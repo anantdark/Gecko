@@ -2,7 +2,7 @@ Gecko is a free, open-source time-travelling audio recorder for Android. It keep
 
 Features:
 • Continuous listening into a ring buffer (foreground mic service)
-• Save the last 1 / 5 / 30 minutes, 2 / 6 hours, or everything held
+• Save the last 1 / 5 / 30 minutes, 2 / 6 hours, a custom span, or everything held
 • Press-and-hold a duration chip to save history and keep recording
 • Settings for RAM budget and sample rate (8 / 16 / 44.1 kHz)
 • Exports WAV files to Music/Gecko via MediaStore
@@ -15,7 +15,7 @@ Privacy:
 • Microphone is used only while listening is enabled
 
 Battery notes:
-Defaults favour battery (8 kHz sample rate, power-saving mic mode, quiet notification). Raise sample rate in Settings when you need more fidelity.
+Defaults favour clear speech (16 kHz sample rate, 256 MB buffer, power-saving mic mode, quiet notification). Drop to 8 kHz in Settings when you want quieter battery.
 
 Source: https://github.com/anantdark/Gecko
 License: GPL-3.0-only

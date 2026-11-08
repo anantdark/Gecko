@@ -18,6 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GeckoViewModel(app: Application) : AndroidViewModel(app) {
@@ -116,11 +117,28 @@ class GeckoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setMemory(bytes: Long) {
-        service?.setMemoryBytes(bytes)
+        val s = service
+        if (s != null) {
+            s.setMemoryBytes(bytes)
+            return
+        }
+        // Service not bound yet — still persist so Settings chips respond immediately.
+        viewModelScope.launch {
+            prefs.setMemoryBytes(bytes)
+            _state.update { it.copy(memoryBytes = bytes) }
+        }
     }
 
     fun setSampleRate(rate: Int) {
-        service?.setSampleRate(rate)
+        val s = service
+        if (s != null) {
+            s.setSampleRate(rate)
+            return
+        }
+        viewModelScope.launch {
+            prefs.setSampleRate(rate)
+            _state.update { it.copy(sampleRate = rate) }
+        }
     }
 
     fun setTheme(id: ThemeId) {

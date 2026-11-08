@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -64,6 +65,9 @@ fun HomeScreen(
     val c = pack.colors
     var pendingSeconds by remember { mutableStateOf<Float?>(null) }
     var nameDraft by remember { mutableStateOf("") }
+    var showCustomDuration by rememberSaveable { mutableStateOf(false) }
+    var customContinue by rememberSaveable { mutableStateOf(false) }
+    var customMinutesDraft by rememberSaveable { mutableStateOf("") }
     var showDonationDialog by rememberSaveable { mutableStateOf(false) }
     var donationColorIndex by rememberSaveable {
         mutableIntStateOf(initialDonationHeartColorIndex())
@@ -193,6 +197,16 @@ fun HomeScreen(
                     memorizedLabel = TimeFormat.shortTimer(state.memorizedSeconds),
                     onSave = { pendingSeconds = it },
                     onSaveAndContinue = onSaveAndContinue,
+                    onCustom = {
+                        customContinue = false
+                        customMinutesDraft = ""
+                        showCustomDuration = true
+                    },
+                    onCustomAndContinue = {
+                        customContinue = true
+                        customMinutesDraft = ""
+                        showCustomDuration = true
+                    },
                 )
                 GeckoText(
                     "Buffer capped at ${TimeFormat.natural(state.totalMemorySeconds)} · ${pack.displayName} pack",
@@ -220,6 +234,47 @@ fun HomeScreen(
 
     if (showDonationDialog) {
         DonationDialog(onDismiss = { showDonationDialog = false })
+    }
+
+    if (showCustomDuration) {
+        GeckoDialog(
+            onDismiss = {
+                showCustomDuration = false
+                customMinutesDraft = ""
+            },
+            title = if (customContinue) "Custom · keep recording" else "Custom duration",
+            body = {
+                Column {
+                    GeckoText(
+                        "How many minutes of memory should Gecko save?",
+                        pack.type.caption,
+                        c.inkMuted,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
+                    GeckoField(
+                        value = customMinutesDraft,
+                        onValueChange = { draft ->
+                            customMinutesDraft = draft.filter { it in '0'..'9' }.take(4)
+                        },
+                        placeholder = "e.g. 45",
+                        keyboardType = KeyboardType.Number,
+                    )
+                }
+            },
+            confirmLabel = if (customContinue) "Save & continue" else "Next",
+            onConfirm = {
+                val minutes = customMinutesDraft.toIntOrNull() ?: return@GeckoDialog
+                if (minutes <= 0) return@GeckoDialog
+                val seconds = minutes * 60f
+                showCustomDuration = false
+                customMinutesDraft = ""
+                if (customContinue) {
+                    onSaveAndContinue(seconds)
+                } else {
+                    pendingSeconds = seconds
+                }
+            },
+        )
     }
 
     pendingSeconds?.let { seconds ->

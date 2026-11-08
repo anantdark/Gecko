@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -265,6 +266,8 @@ fun GeckoChipRow(
     memorizedLabel: String,
     onSave: (Float) -> Unit,
     onSaveAndContinue: (Float) -> Unit,
+    onCustom: () -> Unit,
+    onCustomAndContinue: () -> Unit,
 ) {
     val rows = listOf(
         listOf(
@@ -297,6 +300,14 @@ fun GeckoChipRow(
                 }
             }
         }
+        GeckoChip(
+            label = "Custom",
+            selected = false,
+            enabled = enabled,
+            onClick = onCustom,
+            onLongClick = onCustomAndContinue,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -306,6 +317,7 @@ fun GeckoField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
 ) {
     val pack = LocalGeckoTheme.current
     val c = pack.colors
@@ -315,7 +327,10 @@ fun GeckoField(
         singleLine = true,
         textStyle = pack.type.body.copy(color = c.ink),
         cursorBrush = SolidColor(c.accent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done,
+            keyboardType = keyboardType,
+        ),
         modifier = modifier
             .fillMaxWidth()
             .clip(pack.shapes.chip)

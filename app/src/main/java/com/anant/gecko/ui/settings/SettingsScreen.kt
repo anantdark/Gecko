@@ -1,13 +1,16 @@
 package com.anant.gecko.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,14 +21,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import com.anant.gecko.BuildConfig
 import com.anant.gecko.R
 import com.anant.gecko.data.GeckoPreferences
 import com.anant.gecko.data.IconMorph
 import com.anant.gecko.data.ThemeId
 import com.anant.gecko.service.GeckoRecordingService
+import com.anant.gecko.ui.components.CraftedWithLoveCredit
 import com.anant.gecko.ui.pack.GeckoChip
 import com.anant.gecko.ui.pack.GeckoDialog
+import com.anant.gecko.ui.pack.GeckoIcon
 import com.anant.gecko.ui.pack.GeckoIconButton
 import com.anant.gecko.ui.pack.GeckoText
 import com.anant.gecko.ui.pack.PackSurface
@@ -55,31 +62,22 @@ fun SettingsScreen(
 ) {
     val pack = LocalGeckoTheme.current
     val c = pack.colors
-    val max = Runtime.getRuntime().maxMemory()
-    val low = max / 4
-    val mid = max / 2
-    val high = (max * 0.90).toLong()
     val captureActive = captureMode != GeckoRecordingService.Mode.Idle
     val isRecording = captureMode == GeckoRecordingService.Mode.Recording
 
     var pending by remember { mutableStateOf<PendingCaptureChange?>(null) }
     var blockedMessage by remember { mutableStateOf<String?>(null) }
 
-    fun nearestBucket(bytes: Long): Int = when {
-        bytes >= high * 0.85 -> 3
-        bytes >= mid * 0.85 -> 2
-        else -> 1
-    }
+    // Exact match against the fixed option list so memory/quality never collapse into each other.
+    val memorySel = GeckoPreferences.MEMORY_OPTIONS.minByOrNull { option ->
+        kotlin.math.abs(option - memoryBytes)
+    } ?: GeckoPreferences.DEFAULT_MEMORY_BYTES
+    val qualitySel = GeckoPreferences.QUALITY_OPTIONS.minByOrNull { option ->
+        kotlin.math.abs(option - sampleRate)
+    } ?: GeckoPreferences.DEFAULT_SAMPLE_RATE
 
-    val memorySel = nearestBucket(memoryBytes)
-    val qualitySel = when {
-        sampleRate >= 44_100 -> 3
-        sampleRate >= 16_000 -> 2
-        else -> 1
-    }
-
-    fun requestMemory(bytes: Long, bucket: Int) {
-        if (bucket == memorySel) return
+    fun requestMemory(bytes: Long) {
+        if (bytes == memorySel) return
         val label = TimeFormat.fileSize(bytes)
         if (!captureActive) {
             onMemorySelected(bytes)
@@ -88,8 +86,8 @@ fun SettingsScreen(
         pending = PendingCaptureChange.Memory(bytes, label)
     }
 
-    fun requestQuality(rate: Int, index: Int) {
-        if (index + 1 == qualitySel) return
+    fun requestQuality(rate: Int) {
+        if (rate == qualitySel) return
         val label = when (rate) {
             8_000 -> "8 kHz"
             16_000 -> "16 kHz"
@@ -124,140 +122,136 @@ fun SettingsScreen(
             GeckoText("Settings", pack.type.headline, c.ink)
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
 
-        GeckoText("UI pack", pack.type.headline, c.ink)
-        GeckoText(
-            "Each pack swaps colors, shapes, dial, and motion — not Material skins.",
-            pack.type.caption,
-            c.inkMuted,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            GeckoThemeRegistry.all.chunked(2).forEach { row ->
+        SettingsSection(
+            title = "Appearance",
+            hint = "Each pack swaps colors, shapes, dial, and motion — not Material skins.",
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                GeckoThemeRegistry.all.chunked(2).forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        row.forEach { preview ->
+                            ThemeSwatch(
+                                packPreview = preview,
+                                selected = preview.id == themeId,
+                                onClick = { onThemeSelected(preview.id) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        SettingsSection(
+            title = "Launcher chameleon",
+            hint = "Pick a green tint for the home icon. Changing it swaps the launcher entry — if a shortcut says “not installed”, open Gecko once from the app drawer and the icon will refresh.",
+        ) {
+            IconMorph.entries.chunked(3).forEach { row ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
                 ) {
-                    row.forEach { preview ->
-                        ThemeSwatch(
-                            packPreview = preview,
-                            selected = preview.id == themeId,
-                            onClick = { onThemeSelected(preview.id) },
+                    row.forEach { morph ->
+                        GeckoChip(
+                            label = morph.label,
+                            selected = iconMorph == morph,
+                            onClick = { onIconMorphSelected(morph) },
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(14.dp))
 
-        GeckoText("Launcher chameleon", pack.type.headline, c.ink)
-        GeckoText(
-            "Pick a green tint for the home icon. Changing it swaps the launcher entry — if a shortcut says “not installed”, open Gecko once from the app drawer and the icon will refresh.",
-            pack.type.caption,
-            c.inkMuted,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
-        )
-        IconMorph.entries.chunked(3).forEach { row ->
+        SettingsSection(
+            title = "System memory",
+            hint = "Bigger buffers hold more past — and may nudge other apps. Currently holds ${TimeFormat.natural(totalMemorySeconds)}.",
+        ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                row.forEach { morph ->
+                GeckoPreferences.MEMORY_OPTIONS.forEach { bytes ->
                     GeckoChip(
-                        label = morph.label,
-                        selected = iconMorph == morph,
-                        onClick = { onIconMorphSelected(morph) },
+                        label = TimeFormat.fileSize(bytes),
+                        selected = bytes == memorySel,
+                        onClick = { requestMemory(bytes) },
                         modifier = Modifier.weight(1f),
                     )
                 }
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
 
-        PackSurface(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                GeckoText(
-                    "Audio memory limited at ${TimeFormat.natural(totalMemorySeconds)}",
-                    pack.type.body,
-                    c.ink,
-                )
-                GeckoText(
-                    "Lower RAM and sample rate = longer history and quieter battery.",
-                    pack.type.caption,
-                    c.inkMuted,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-        GeckoText("A) System memory in use", pack.type.headline, c.ink)
-        GeckoText(
-            "Bigger buffers hold more past — and may nudge other apps.",
-            pack.type.caption,
-            c.inkMuted,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth(),
+        SettingsSection(
+            title = "Sound quality",
+            hint = "16 kHz (default) is clear for speech. 8 kHz saves battery. 44.1 kHz costs ~2.5× the PCM of 16 kHz. Memory size stays the same when you change this.",
         ) {
-            GeckoChip(
-                label = TimeFormat.fileSize(low),
-                selected = memorySel == 1,
-                onClick = { requestMemory(low, 1) },
-                modifier = Modifier.weight(1f),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                GeckoPreferences.QUALITY_OPTIONS.forEach { rate ->
+                    GeckoChip(
+                        label = when (rate) {
+                            8_000 -> "8 kHz"
+                            16_000 -> "16 kHz"
+                            else -> "44.1"
+                        },
+                        selected = rate == qualitySel,
+                        onClick = { requestQuality(rate) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        SettingsSection(
+            title = "About",
+            hint = "Rewind the room. Catch what just happened.\n\nBuilt with Kotlin and Jetpack Compose. Audio stays on your device.",
+        ) {
+            AboutRow("App", "Gecko")
+            AboutRow("Version", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            AboutRow("Package", BuildConfig.APPLICATION_ID)
+            AboutRow("Channel", if (BuildConfig.IS_FDROID) "F-Droid" else "GitHub")
+            AboutRow("Created by", "Anant")
+            AboutLinkRow(
+                label = "GitHub",
+                value = "github.com/anantdark/Gecko",
+                url = "https://github.com/anantdark/Gecko",
             )
-            GeckoChip(
-                label = TimeFormat.fileSize(mid),
-                selected = memorySel == 2,
-                onClick = { requestMemory(mid, 2) },
-                modifier = Modifier.weight(1f),
+            AboutLinkRow(
+                label = "Author",
+                value = "anantdark.github.io",
+                url = "https://anantdark.github.io",
             )
-            GeckoChip(
-                label = TimeFormat.fileSize(high),
-                selected = memorySel == 3,
-                onClick = { requestMemory(high, 3) },
-                modifier = Modifier.weight(1f),
-            )
+            if (BuildConfig.IS_FDROID) {
+                AboutLinkRow(
+                    label = "F-Droid",
+                    value = "f-droid.org/packages/com.anant.gecko",
+                    url = "https://f-droid.org/packages/com.anant.gecko/",
+                )
+            }
         }
 
         Spacer(Modifier.height(28.dp))
-        GeckoText("B) Sound quality", pack.type.headline, c.ink)
-        GeckoText(
-            "8 kHz (default) is best for battery and still clear for speech. 16 kHz is a balance. 44.1 kHz costs ~5× the PCM of 8 kHz.",
-            pack.type.caption,
-            c.inkMuted,
-            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            GeckoPreferences.QUALITY_OPTIONS.forEachIndexed { index, rate ->
-                GeckoChip(
-                    label = when (rate) {
-                        8_000 -> "8 kHz"
-                        16_000 -> "16 kHz"
-                        else -> "44.1"
-                    },
-                    selected = qualitySel == index + 1,
-                    onClick = { requestQuality(rate, index) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        GeckoButtonBack(onBack)
+        CraftedWithLoveCredit(modifier = Modifier.fillMaxWidth())
     }
 
     pending?.let { change ->
@@ -302,11 +296,76 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun GeckoButtonBack(onBack: () -> Unit) {
-    com.anant.gecko.ui.pack.GeckoButton(
-        label = "Return",
-        onClick = onBack,
-        tone = com.anant.gecko.ui.pack.GeckoButtonTone.Ghost,
-        modifier = Modifier.fillMaxWidth(),
-    )
+private fun SettingsSection(
+    title: String,
+    hint: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val pack = LocalGeckoTheme.current
+    val c = pack.colors
+    PackSurface(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            GeckoText(title, pack.type.headline, c.ink)
+            if (hint != null) {
+                GeckoText(
+                    hint,
+                    pack.type.caption,
+                    c.inkMuted,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
+                )
+            } else {
+                Spacer(Modifier.height(12.dp))
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun AboutRow(label: String, value: String) {
+    val pack = LocalGeckoTheme.current
+    val c = pack.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GeckoText(
+            label,
+            pack.type.caption,
+            c.inkMuted,
+            modifier = Modifier.weight(1f),
+        )
+        GeckoText(value, pack.type.body, c.ink)
+    }
+}
+
+@Composable
+private fun AboutLinkRow(label: String, value: String, url: String) {
+    val pack = LocalGeckoTheme.current
+    val c = pack.colors
+    val uriHandler = LocalUriHandler.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { uriHandler.openUri(url) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GeckoText(
+            label,
+            pack.type.caption,
+            c.inkMuted,
+            modifier = Modifier.weight(1f),
+        )
+        GeckoIcon(
+            resId = R.drawable.ic_ph_arrow_square_out,
+            contentDescription = null,
+            tint = c.accent,
+            size = 14.dp,
+        )
+        Spacer(Modifier.size(6.dp))
+        GeckoText(value, pack.type.body, c.accent)
+    }
 }

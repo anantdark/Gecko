@@ -20,9 +20,9 @@ Inspired by [Echo](https://github.com/mafik/echo).
 ## Features
 
 - Continuous listening into a ring buffer (foreground mic service)
-- Save the last 1 / 5 / 30 minutes, 2 / 6 hours, or everything held
+- Save the last 1 / 5 / 30 minutes, 2 / 6 hours, a custom span, or everything held
 - Press-and-hold a duration chip to save history **and** keep recording
-- Settings for RAM budget and sample rate (8 / 16 / 44.1 kHz)
+- Settings for UI packs, launcher icon, RAM budget, and sample rate (8 / 16 / 44.1 kHz)
 - Exports WAV files to `Music/Gecko` via MediaStore
 - Restarts listening after reboot if it was left on
 
@@ -32,7 +32,7 @@ Always-on listening is dominated by the mic + PCM copy path. Defaults favor batt
 
 | Choice | Why it helps |
 | --- | --- |
-| Default **8 kHz** | Speech-clear; ~⅙ the PCM of 48 kHz — raise in Settings if needed |
+| Default **16 kHz** / **256 MB** buffer | Clear speech; drop to 8 kHz in Settings if you want quieter battery |
 | `PERFORMANCE_MODE_POWER_SAVING` | Platform favors battery over latency for the mic path |
 | Blocking reads in **80 ms** slices | Fewer sched wakeups; save still **drains** the HW buffer first |
 | **No StateFlow publishes** while UI unbound | Capture runs quiet in the background |
