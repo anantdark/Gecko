@@ -1,0 +1,1 @@
+• Add custom save duration, About settings, and clearer capture defaults.
