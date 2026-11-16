@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gecko — Rewind the room</title>
+  <meta name="description" content="Time-travelling audio recorder for Android. Rolling mic memory so you can save what just happened." />
+  <meta name="theme-color" content="#1FA97A" />
+  <link rel="icon" href="assets/icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/icon.png" />
+  <meta property="og:title" content="Gecko — Rewind the room" />
+  <meta property="og:description" content="Time-travelling audio recorder for Android. Save what just happened." />
+  <meta property="og:image" content="assets/icon.png" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <div class="leaf-grain"></div>
+  </div>
+
+  <header class="top">
+    <a class="mark" href="#top">
+      <img src="assets/icon.png" alt="" width="36" height="36" />
+      <span>Gecko</span>
+    </a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#packs">Packs</a>
+      <a href="#download">Download</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="brand">Gecko</p>
+        <h1>Rewind the room.</h1>
+        <p class="lede">Catch what just happened. A rolling mic buffer on Android — save the past, then keep recording forward.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/anantdark/Gecko/releases/latest">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg>
+            GitHub Releases
+          </a>
+          <a class="btn btn-secondary" href="https://f-droid.org/packages/com.anant.gecko/">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a1.5 1.5 0 0 0-1.06.44L9.5 3.88 8.06 2.44A1.5 1.5 0 1 0 5.94 4.56L7.38 6H4.5A2.5 2.5 0 0 0 2 8.5v11A2.5 2.5 0 0 0 4.5 22h15a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 19.5 6h-2.88l1.44-1.44a1.5 1.5 0 1 0-2.12-2.12L14.5 3.88l-1.44-1.44A1.5 1.5 0 0 0 12 2m-5 8.5h10v9H7z"/></svg>
+            F-Droid
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="phone-glow" aria-hidden="true"></div>
+        <img
+          class="phone"
+          src="assets/screenshots/01-home-biolume.jpg"
+          alt="Gecko home screen in the Biolume pack — listening dial and memory chips"
+          width="390"
+          height="844"
+        />
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <h2>Save the past. Keep going.</h2>
+      <p class="section-lede">Gecko listens into RAM. When something worth keeping just happened, tap a span — or press and hold to export history and keep recording.</p>
+      <ul class="features">
+        <li>
+          <span class="feature-kicker">Buffer</span>
+          <strong>Rolling mic memory</strong>
+          <p>Continuous foreground capture into a ring buffer — up to hours, sized by your RAM budget.</p>
+        </li>
+        <li>
+          <span class="feature-kicker">Save</span>
+          <strong>Tap or hold</strong>
+          <p>Export the last 1 / 5 / 30 minutes, 2 / 6 hours, a custom span, or everything held. Hold to keep listening after.</p>
+        </li>
+        <li>
+          <span class="feature-kicker">Private</span>
+          <strong>On-device only</strong>
+          <p>No ads, no analytics, no uploads. WAV files land in Music/Gecko via MediaStore.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section packs" id="packs">
+      <h2>Four skins. Zero Material chrome.</h2>
+      <p class="section-lede">Each UI pack rewires color, dial, surface, type, and motion — not a theme toggle on the same buttons.</p>
+      <div class="pack-rail" role="list">
+        <figure role="listitem">
+          <img src="assets/screenshots/01-home-biolume.jpg" alt="Biolume pack" loading="lazy" />
+          <figcaption><strong>Biolume</strong> Mint canopy</figcaption>
+        </figure>
+        <figure role="listitem">
+          <img src="assets/screenshots/03-home-sonar.jpg" alt="Sonar pack" loading="lazy" />
+          <figcaption><strong>Sonar</strong> Night ocean</figcaption>
+        </figure>
+        <figure role="listitem">
+          <img src="assets/screenshots/04-home-volt.jpg" alt="Volt pack" loading="lazy" />
+          <figcaption><strong>Volt</strong> Acid chartreuse</figcaption>
+        </figure>
+        <figure role="listitem">
+          <img src="assets/screenshots/02-settings.jpg" alt="Settings screen" loading="lazy" />
+          <figcaption><strong>Settings</strong> Memory &amp; packs</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section download" id="download">
+      <h2>Get Gecko</h2>
+      <p class="section-lede">Same package on both channels. F-Droid for updates; GitHub for the newest signed build.</p>
+      <div class="cta cta-center">
+        <a class="btn btn-primary" href="https://github.com/anantdark/Gecko/releases/latest">Download APK</a>
+        <a class="btn btn-secondary" href="https://f-droid.org/packages/com.anant.gecko/">View on F-Droid</a>
+        <a class="btn btn-ghost" href="https://github.com/anantdark/Gecko">Source on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>GPL-3.0 · Inspired by <a href="https://github.com/mafik/echo">Echo</a> · <a href="https://github.com/anantdark/Gecko">anantdark/Gecko</a></p>
+  </footer>
+
+  <script>
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!prefersReduced) {
+      document.documentElement.classList.add("motion");
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("in"); }),
+        { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      );
+      document.querySelectorAll(".section, .hero-copy, .hero-visual").forEach((el) => io.observe(el));
+    } else {
+      document.querySelectorAll(".section, .hero-copy, .hero-visual").forEach((el) => el.classList.add("in"));
+    }
+  </script>
+</body>
+</html>
