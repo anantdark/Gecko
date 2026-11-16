@@ -46,8 +46,8 @@ android {
             dimension = "distribution"
             buildConfigField("boolean", "IS_FDROID", "true")
             // F-Droid builds from source without -P overrides — bump by hand per F-Droid release.
-            versionCode = 4
-            versionName = "1.0.4"
+            versionCode = 5
+            versionName = "1.0.5"
         }
     }
 
